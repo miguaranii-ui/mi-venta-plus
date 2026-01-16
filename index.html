@@ -3,38 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Venta +</title>
+    <title>Mi Venta + | Panel de Control</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; margin: 0; background: #f4f7f6; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; }
         #splash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.5s; }
-        .logo { font-size: 3rem; font-weight: bold; color: #1a1a1a; }
+        .logo { font-size: 2.5rem; font-weight: bold; color: #1a1a1a; }
         .logo span { color: #0052ff; }
-        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 350px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 12px; background: #0052ff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
-        button:hover { background: #0041cc; }
-        p { color: #666; font-size: 0.9rem; }
+        
+        /* Telas */
+        .screen { display: none; padding: 20px; }
+        .active { display: block; }
+        .login-container { display: flex; align-items: center; justify-content: center; height: 100vh; }
+        
+        /* Componentes */
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 350px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #0052ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        /* Dashboard */
+        .header { background: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .product-item { background: white; padding: 15px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; border-left: 4px solid #0052ff; }
     </style>
 </head>
 <body>
 
     <div id="splash">
         <div class="logo">Mi Venta <span>+</span></div>
-        <p>Más control, más resultados</p>
+        <p>Iniciando sistema...</p>
     </div>
 
-    <div class="login-card">
-        <h2>Ingresar</h2>
-        <p>Introduce tu email para recibir un enlace de acceso mágico.</p>
-        <input type="email" id="email" placeholder="tu@email.com" required>
-        <button onclick="enviarCodigo()">Recibir Enlace</button>
+    <div id="login-screen" class="screen login-container">
+        <div class="card" style="text-align: center;">
+            <h2>Bienvenido</h2>
+            <p>Ingresa tu email para recibir el enlace de acceso.</p>
+            <input type="email" id="email" placeholder="ejemplo@correo.com">
+            <button onclick="enviarCodigo()">Enviar Enlace</button>
+        </div>
+    </div>
+
+    <div id="dashboard-screen" class="screen">
+        <div class="header">
+            <div class="logo" style="font-size: 1.2rem;">Mi Venta <span>+</span></div>
+            <button onclick="logout()" style="width: auto; background: #ff4747; padding: 5px 15px;">Salir</button>
+        </div>
+
+        <div style="max-width: 600px; margin: 20px auto;">
+            <h3>📦 Nuevo Producto</h3>
+            <div class="card" style="max-width: 100%;">
+                <input type="text" id="p-nome" placeholder="Nombre del producto">
+                <input type="number" id="p-preco" placeholder="Precio de Venta (Gs.)">
+                <button onclick="salvarProduto()">Guardar en Inventario</button>
+            </div>
+
+            <h3>📋 Inventario</h3>
+            <div id="lista-produtos">
+                </div>
+        </div>
     </div>
 
     <script>
-        // Configuração do seu Firebase
+        // Suas chaves de conexão
         const firebaseConfig = {
             apiKey: "AIzaSyDBntAU1uA5zGGZRW3c0Olxn_fe7-D0EFM",
             authDomain: "miguarani.firebaseapp.com",
@@ -45,59 +76,84 @@
             measurementId: "G-3R3PNJ3GM4"
         };
         
-        // Inicializa o Firebase
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        // Configurações do link de e-mail
-        const actionCodeSettings = {
-          url: 'https://mi-venta-plus.vercel.app', // Link de retorno após clicar no e-mail
-          handleCodeInApp: true,
-        };
+        // Monitor de estado do usuário
+        auth.onAuthStateChanged(user => {
+            document.getElementById('splash').style.opacity = '0';
+            setTimeout(() => document.getElementById('splash').style.display = 'none', 500);
 
-        // Efeito da Splash Screen
-        setTimeout(() => {
-            const splash = document.getElementById('splash');
-            splash.style.opacity = '0';
-            setTimeout(() => { splash.style.display = 'none'; }, 500);
-        }, 2500);
+            if (user) {
+                document.getElementById('login-screen').classList.remove('active');
+                document.getElementById('dashboard-screen').classList.add('active');
+                carregarProdutos();
+            } else {
+                document.getElementById('login-screen').classList.add('active');
+                document.getElementById('dashboard-screen').classList.remove('active');
+            }
+        });
 
-        // Função para enviar o link real de login
+        // Enviar link de login
         function enviarCodigo() {
             const email = document.getElementById('email').value;
-            
-            if(!email || !email.includes('@')) {
-                return alert("Por favor, introduce un email válido.");
-            }
+            const actionCodeSettings = { 
+                url: 'https://mi-venta-plus.vercel.app', 
+                handleCodeInApp: true 
+            };
 
-            // Inicia o processo de envio do link
-            firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
+            auth.sendSignInLinkToEmail(email, actionCodeSettings)
                 .then(() => {
-                    // Salva o e-mail localmente para confirmar na volta
                     window.localStorage.setItem('emailForSignIn', email);
-                    alert('¡Enlace enviado! Revisa tu bandeja de entrada en unos instantes.');
+                    alert('¡Enlace enviado! Revisa tu email.');
                 })
-                .catch((error) => {
-                    console.error("Error Firebase:", error);
-                    alert('Hubo un error: ' + error.message);
-                });
+                .catch(err => alert('Error: ' + err.message));
         }
 
-        // Lógica para completar o login quando o usuário volta do e-mail
-        if (firebase.auth().isSignInWithEmailLink(window.location.href)) {
-            let email = window.localStorage.getItem('emailForSignIn');
-            if (!email) {
-                email = window.prompt('Por favor, confirma tu email para iniciar sesión:');
-            }
-            firebase.auth().signInWithEmailLink(email, window.location.href)
-                .then((result) => {
-                    window.localStorage.removeItem('emailForSignIn');
-                    alert('¡Bienvenido! Has iniciado sesión correctamente.');
-                    // Aqui você pode redirecionar para o Dashboard futuramente
-                })
-                .catch((error) => {
-                    alert('Error al completar el ingreso: ' + error.message);
-                });
+        // Finalizar login ao clicar no link do email
+        if (auth.isSignInWithEmailLink(window.location.href)) {
+            let email = window.localStorage.getItem('emailForSignIn') || window.prompt('Confirma tu email:');
+            auth.signInWithEmailLink(email, window.location.href)
+                .then(() => window.localStorage.removeItem('emailForSignIn'))
+                .catch(err => alert('Error al ingresar: ' + err.message));
         }
+
+        // Salvar produto no banco de dados
+        function salvarProduto() {
+            const nome = document.getElementById('p-nome').value;
+            const preco = document.getElementById('p-preco').value;
+            if(!nome || !preco) return alert("Completa todos los campos");
+
+            db.collection("productos").add({
+                nome: nome,
+                preco: preco,
+                userId: auth.currentUser.uid,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                document.getElementById('p-nome').value = "";
+                document.getElementById('p-preco').value = "";
+            });
+        }
+
+        // Listar produtos do banco em tempo real
+        function carregarProdutos() {
+            db.collection("productos")
+              .where("userId", "==", auth.currentUser.uid)
+              .onSnapshot(snapshot => {
+                let html = "";
+                snapshot.forEach(doc => {
+                    const p = doc.data();
+                    html += `<div class="product-item">
+                                <strong>${p.nome}</strong>
+                                <span>${p.preco} Gs.</span>
+                             </div>`;
+                });
+                document.getElementById('lista-produtos').innerHTML = html;
+            });
+        }
+
+        function logout() { auth.signOut(); }
     </script>
 </body>
 </html>
