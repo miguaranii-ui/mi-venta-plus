@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Venta +</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <style>
+        /* Estilo Fintech */
+        body { font-family: 'Inter', sans-serif; margin: 0; background: #f4f7f6; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        #splash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.5s; }
+        .logo { font-size: 3rem; font-weight: bold; color: #1a1a1a; transform: translateY(20px); opacity: 0; animation: fadeInUp 1.5s forwards; }
+        .logo span { color: #0052ff; }
+        .slogan { font-size: 1rem; color: #666; margin-top: 10px; opacity: 0; animation: fadeIn 2s forwards 0.5s; }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        
+        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 350px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #0052ff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .admin-icon { position: absolute; top: 20px; right: 20px; color: #ccc; cursor: pointer; font-size: 20px; opacity: 0.3; }
+    </style>
+</head>
+<body>
+
+    <div id="splash">
+        <div class="logo">Mi Venta <span>+</span></div>
+        <div class="slogan">Más control, más resultados</div>
+    </div>
+
+    <div class="admin-icon" onclick="acessoAdmin()">⚙️</div>
+
+    <div class="login-card">
+        <h2>Ingresar</h2>
+        <input type="email" id="email" placeholder="Tu e-mail">
+        <button onclick="enviarCodigo()">Recibir Código</button>
+    </div>
+
+    <script>
+      const firebaseConfig = {
+  apiKey: "AIzaSyDBntAU1uA5zGGZRW3c0Olxn_fe7-D0EFM",
+  authDomain: "miguarani.firebaseapp.com",
+  projectId: "miguarani",
+  storageBucket: "miguarani.firebasestorage.app",
+  messagingSenderId: "526507667874",
+  appId: "1:526507667874:web:b5b08c890c832d5f2702fb",
+  measurementId: "G-3R3PNJ3GM4"
+};
+        firebase.initializeApp(firebaseConfig);
+
+        // Splash Screen Logic
+        setTimeout(() => {
+            document.getElementById('splash').style.opacity = '0';
+            setTimeout(() => { document.getElementById('splash').style.display = 'none'; }, 500);
+        }, 2500);
+
+        function enviarCodigo() {
+            const email = document.getElementById('email').value;
+            alert('Código enviado a: ' + email + ' (Configurar Firebase Auth para real)');
+        }
+
+        function acessoAdmin() {
+            const emailAdmin = prompt("E-mail Administrativo:");
+            if(emailAdmin === "SEU_EMAIL_MASTER@gmail.com") {
+                alert("Validando acceso master...");
+            }
+        }
+    </script>
+</body>
+</html>
