@@ -3,39 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Venta +</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <title>Mi Venta + | Business System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <style>
-        body { font-family: sans-serif; margin: 0; background: #f0f2f5; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #0052ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        #dashboard { display: none; width: 90%; max-width: 600px; background: white; padding: 20px; border-radius: 12px; }
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
+        .fintech-card { background: white; border-radius: 32px; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .btn-primary { background: #0047AB; color: white; padding: 1rem; border-radius: 16px; font-weight: 700; transition: all 0.3s; width: 100%; }
+        .btn-primary:hover { background: #003580; transform: translateY(-2px); }
+        .input-field { background: #F1F5F9; border: 2px solid transparent; padding: 1rem; border-radius: 12px; width: 100%; outline: none; transition: all 0.3s; }
+        .input-field:focus { border-color: #0047AB; background: white; }
     </style>
 </head>
 <body>
 
-    <div id="login-card" class="card">
-        <h2>Mi Venta +</h2>
-        <p>Ingresa para administrar</p>
-        <input type="email" id="email" placeholder="tu@email.com">
-        <button onclick="enviarCodigo()">Enviar Enlace Mágico</button>
+    <div id="auth-screen" class="min-h-screen flex items-center justify-center p-6">
+        <div class="w-full max-w-md space-y-8 animate-in fade-in">
+            <div class="text-center">
+                <h1 class="text-4xl font-black text-slate-900">Mi Venta <span class="text-[#0047AB]">+</span></h1>
+                <p id="auth-title" class="text-slate-500 mt-2">Ingresa con tu email y contraseña</p>
+            </div>
+
+            <div class="fintech-card p-8 space-y-4">
+                <div id="register-only" class="hidden space-y-4">
+                    <input type="text" id="reg-name" placeholder="Nombre Completo" class="input-field">
+                    <input type="text" id="reg-business" placeholder="Nombre del Negocio" class="input-field">
+                </div>
+                
+                <input type="email" id="auth-email" placeholder="Email" class="input-field">
+                <input type="password" id="auth-password" placeholder="Contraseña" class="input-field">
+                
+                <button id="btn-auth" onclick="handleAuth()" class="btn-primary">Entrar</button>
+                
+                <p class="text-center text-sm text-slate-500 mt-4">
+                    <span id="auth-toggle-text">¿No tienes cuenta?</span> 
+                    <button onclick="toggleAuthMode()" class="text-[#0047AB] font-bold" id="auth-toggle-btn">Regístrate</button>
+                </p>
+            </div>
+        </div>
     </div>
 
-    <div id="dashboard">
-        <h2>Bienvenido al Panel</h2>
-        <p>¡Has ingresado con éxito!</p>
-        <hr>
-        <input type="text" id="p-nome" placeholder="Producto">
-        <input type="number" id="p-preco" placeholder="Precio">
-        <button onclick="salvar()">Guardar</button>
-        <br><br>
-        <button onclick="firebase.auth().signOut()" style="background:#ff4d4d">Cerrar Sesión</button>
+    <div id="main-app" class="hidden min-h-screen">
+        <nav class="bg-white border-b border-slate-100 p-4 flex justify-between items-center">
+            <span class="font-black text-xl text-slate-900">Mi Venta +</span>
+            <button onclick="logout()" class="text-red-500 font-bold text-sm">Cerrar Sesión</button>
+        </nav>
+
+        <div class="p-6 max-w-7xl mx-auto space-y-8">
+            <header>
+                <h2 id="welcome-user" class="text-3xl font-bold text-slate-900">Bienvenido</h2>
+                <p class="text-slate-500">Gestión de Clientes e Inventario</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="fintech-card p-6 border-l-8 border-[#0047AB]">
+                    <h3 class="font-bold text-lg mb-4">👥 Clientes</h3>
+                    <p class="text-slate-500 mb-4">Administra tus deudores y cobros.</p>
+                    <button class="text-[#0047AB] font-bold">Ver Clientes →</button>
+                </div>
+                <div class="fintech-card p-6 border-l-8 border-emerald-500">
+                    <h3 class="font-bold text-lg mb-4">📦 Inventario</h3>
+                    <p class="text-slate-500 mb-4">Controla tus productos y stock.</p>
+                    <button class="text-emerald-500 font-bold">Ver Productos →</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
+        // Configuração do Firebase (Suas chaves atuais)
         const firebaseConfig = {
             apiKey: "AIzaSyDBntAU1uA5zGGZRW3c0Olxn_fe7-D0EFM",
             authDomain: "miguarani.firebaseapp.com",
@@ -45,53 +86,64 @@
             appId: "1:526507667874:web:b5b08c890c832d5f2702fb"
         };
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        // 1. Monitor de sessão
-        firebase.auth().onAuthStateChanged(user => {
+        let isLogin = true;
+
+        function toggleAuthMode() {
+            isLogin = !isLogin;
+            document.getElementById('register-only').classList.toggle('hidden');
+            document.getElementById('auth-title').innerText = isLogin ? "Ingresa con tu email y contraseña" : "Crea tu cuenta de negocio";
+            document.getElementById('btn-auth').innerText = isLogin ? "Entrar" : "Crear Cuenta";
+            document.getElementById('auth-toggle-text').innerText = isLogin ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?";
+            document.getElementById('auth-toggle-btn').innerText = isLogin ? "Regístrate" : "Inicia Sesión";
+        }
+
+        async function handleAuth() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+
+            try {
+                if (isLogin) {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } else {
+                    const name = document.getElementById('reg-name').value;
+                    const business = document.getElementById('reg-business').value;
+                    
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    
+                    // Salva dados adicionais do usuário no Firestore (como no seu Auth.tsx)
+                    await db.collection('users').doc(userCredential.user.uid).set({
+                        name: name,
+                        businessName: business,
+                        email: email,
+                        role: 'OWNER',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        }
+
+        auth.onAuthStateChanged(async (user) => {
             if (user) {
-                document.getElementById('login-card').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                
+                // Busca o nome do usuário no banco
+                const doc = await db.collection('users').doc(user.uid).get();
+                if (doc.exists) {
+                    document.getElementById('welcome-user').innerText = "Hola, " + doc.data().name;
+                }
             } else {
-                document.getElementById('login-card').style.display = 'block';
-                document.getElementById('dashboard').style.display = 'none';
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('main-app').classList.add('hidden');
             }
         });
 
-        // 2. Enviar o link
-        function enviarCodigo() {
-            const email = document.getElementById('email').value;
-            const actionCodeSettings = {
-                url: window.location.href, // Garante que volta para a mesma página
-                handleCodeInApp: true
-            };
-
-            firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
-                .then(() => {
-                    window.localStorage.setItem('emailForSignIn', email);
-                    alert('¡Revisa tu email!');
-                })
-                .catch(err => alert(err.message));
-        }
-
-        // 3. Finalizar o acesso (O QUE QUEBRA O LOOP)
-        if (firebase.auth().isSignInWithEmailLink(window.location.href)) {
-            let email = window.localStorage.getItem('emailForSignIn');
-            
-            // Se o e-mail sumiu do navegador, pergunta de novo
-            if (!email) {
-                email = window.prompt('Por favor confirma tu email para entrar:');
-            }
-
-            if (email) {
-                firebase.auth().signInWithEmailLink(email, window.location.href)
-                    .then(() => {
-                        window.localStorage.removeItem('emailForSignIn');
-                        // Força o redirecionamento para limpar o link sujo na barra de endereços
-                        window.location.replace(window.location.pathname);
-                    })
-                    .catch(err => alert('Error: ' + err.message));
-            }
-        }
+        function logout() { auth.signOut(); }
     </script>
 </body>
 </html>
