@@ -3,157 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Venta + | Panel de Control</title>
+    <title>Mi Venta +</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; }
-        #splash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.5s; }
-        .logo { font-size: 2.5rem; font-weight: bold; color: #1a1a1a; }
-        .logo span { color: #0052ff; }
-        
-        /* Telas */
-        .screen { display: none; padding: 20px; }
-        .active { display: block; }
-        .login-container { display: flex; align-items: center; justify-content: center; height: 100vh; }
-        
-        /* Componentes */
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 350px; }
+        body { font-family: sans-serif; margin: 0; background: #f0f2f5; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; text-align: center; }
         input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background: #0052ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        
-        /* Dashboard */
-        .header { background: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .product-item { background: white; padding: 15px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; border-left: 4px solid #0052ff; }
+        #dashboard { display: none; width: 90%; max-width: 600px; background: white; padding: 20px; border-radius: 12px; }
     </style>
 </head>
 <body>
 
-    <div id="splash">
-        <div class="logo">Mi Venta <span>+</span></div>
-        <p>Iniciando sistema...</p>
+    <div id="login-card" class="card">
+        <h2>Mi Venta +</h2>
+        <p>Ingresa para administrar</p>
+        <input type="email" id="email" placeholder="tu@email.com">
+        <button onclick="enviarCodigo()">Enviar Enlace Mágico</button>
     </div>
 
-    <div id="login-screen" class="screen login-container">
-        <div class="card" style="text-align: center;">
-            <h2>Bienvenido</h2>
-            <p>Ingresa tu email para recibir el enlace de acceso.</p>
-            <input type="email" id="email" placeholder="ejemplo@correo.com">
-            <button onclick="enviarCodigo()">Enviar Enlace</button>
-        </div>
-    </div>
-
-    <div id="dashboard-screen" class="screen">
-        <div class="header">
-            <div class="logo" style="font-size: 1.2rem;">Mi Venta <span>+</span></div>
-            <button onclick="logout()" style="width: auto; background: #ff4747; padding: 5px 15px;">Salir</button>
-        </div>
-
-        <div style="max-width: 600px; margin: 20px auto;">
-            <h3>📦 Nuevo Producto</h3>
-            <div class="card" style="max-width: 100%;">
-                <input type="text" id="p-nome" placeholder="Nombre del producto">
-                <input type="number" id="p-preco" placeholder="Precio de Venta (Gs.)">
-                <button onclick="salvarProduto()">Guardar en Inventario</button>
-            </div>
-
-            <h3>📋 Inventario</h3>
-            <div id="lista-produtos">
-                </div>
-        </div>
+    <div id="dashboard">
+        <h2>Bienvenido al Panel</h2>
+        <p>¡Has ingresado con éxito!</p>
+        <hr>
+        <input type="text" id="p-nome" placeholder="Producto">
+        <input type="number" id="p-preco" placeholder="Precio">
+        <button onclick="salvar()">Guardar</button>
+        <br><br>
+        <button onclick="firebase.auth().signOut()" style="background:#ff4d4d">Cerrar Sesión</button>
     </div>
 
     <script>
-        // Suas chaves de conexão
         const firebaseConfig = {
             apiKey: "AIzaSyDBntAU1uA5zGGZRW3c0Olxn_fe7-D0EFM",
             authDomain: "miguarani.firebaseapp.com",
             projectId: "miguarani",
             storageBucket: "miguarani.firebasestorage.app",
             messagingSenderId: "526507667874",
-            appId: "1:526507667874:web:b5b08c890c832d5f2702fb",
-            measurementId: "G-3R3PNJ3GM4"
+            appId: "1:526507667874:web:b5b08c890c832d5f2702fb"
         };
-        
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
 
-        // Monitor de estado do usuário
-        auth.onAuthStateChanged(user => {
-            document.getElementById('splash').style.opacity = '0';
-            setTimeout(() => document.getElementById('splash').style.display = 'none', 500);
-
+        // 1. Monitor de sessão
+        firebase.auth().onAuthStateChanged(user => {
             if (user) {
-                document.getElementById('login-screen').classList.remove('active');
-                document.getElementById('dashboard-screen').classList.add('active');
-                carregarProdutos();
+                document.getElementById('login-card').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
             } else {
-                document.getElementById('login-screen').classList.add('active');
-                document.getElementById('dashboard-screen').classList.remove('active');
+                document.getElementById('login-card').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
             }
         });
 
-        // Enviar link de login
+        // 2. Enviar o link
         function enviarCodigo() {
             const email = document.getElementById('email').value;
-            const actionCodeSettings = { 
-                url: 'https://mi-venta-plus.vercel.app', 
-                handleCodeInApp: true 
+            const actionCodeSettings = {
+                url: window.location.href, // Garante que volta para a mesma página
+                handleCodeInApp: true
             };
 
-            auth.sendSignInLinkToEmail(email, actionCodeSettings)
+            firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
                 .then(() => {
                     window.localStorage.setItem('emailForSignIn', email);
-                    alert('¡Enlace enviado! Revisa tu email.');
+                    alert('¡Revisa tu email!');
                 })
-                .catch(err => alert('Error: ' + err.message));
+                .catch(err => alert(err.message));
         }
 
-        // Finalizar login ao clicar no link do email
-        if (auth.isSignInWithEmailLink(window.location.href)) {
-            let email = window.localStorage.getItem('emailForSignIn') || window.prompt('Confirma tu email:');
-            auth.signInWithEmailLink(email, window.location.href)
-                .then(() => window.localStorage.removeItem('emailForSignIn'))
-                .catch(err => alert('Error al ingresar: ' + err.message));
+        // 3. Finalizar o acesso (O QUE QUEBRA O LOOP)
+        if (firebase.auth().isSignInWithEmailLink(window.location.href)) {
+            let email = window.localStorage.getItem('emailForSignIn');
+            
+            // Se o e-mail sumiu do navegador, pergunta de novo
+            if (!email) {
+                email = window.prompt('Por favor confirma tu email para entrar:');
+            }
+
+            if (email) {
+                firebase.auth().signInWithEmailLink(email, window.location.href)
+                    .then(() => {
+                        window.localStorage.removeItem('emailForSignIn');
+                        // Força o redirecionamento para limpar o link sujo na barra de endereços
+                        window.location.replace(window.location.pathname);
+                    })
+                    .catch(err => alert('Error: ' + err.message));
+            }
         }
-
-        // Salvar produto no banco de dados
-        function salvarProduto() {
-            const nome = document.getElementById('p-nome').value;
-            const preco = document.getElementById('p-preco').value;
-            if(!nome || !preco) return alert("Completa todos los campos");
-
-            db.collection("productos").add({
-                nome: nome,
-                preco: preco,
-                userId: auth.currentUser.uid,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                document.getElementById('p-nome').value = "";
-                document.getElementById('p-preco').value = "";
-            });
-        }
-
-        // Listar produtos do banco em tempo real
-        function carregarProdutos() {
-            db.collection("productos")
-              .where("userId", "==", auth.currentUser.uid)
-              .onSnapshot(snapshot => {
-                let html = "";
-                snapshot.forEach(doc => {
-                    const p = doc.data();
-                    html += `<div class="product-item">
-                                <strong>${p.nome}</strong>
-                                <span>${p.preco} Gs.</span>
-                             </div>`;
-                });
-                document.getElementById('lista-produtos').innerHTML = html;
-            });
-        }
-
-        function logout() { auth.signOut(); }
     </script>
 </body>
 </html>
