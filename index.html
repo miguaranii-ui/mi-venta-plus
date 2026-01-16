@@ -13,8 +13,10 @@
         .logo { font-size: 3rem; font-weight: bold; color: #1a1a1a; }
         .logo span { color: #0052ff; }
         .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 350px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #0052ff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; background: #0052ff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        button:hover { background: #0041cc; }
+        p { color: #666; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -26,49 +28,74 @@
 
     <div class="login-card">
         <h2>Ingresar</h2>
-        <input type="email" id="email" placeholder="Tu e-mail">
-        <button onclick="enviarCodigo()">Recibir Código</button>
+        <p>Introduce tu email para recibir un enlace de acceso mágico.</p>
+        <input type="email" id="email" placeholder="tu@email.com" required>
+        <button onclick="enviarCodigo()">Recibir Enlace</button>
     </div>
 
     <script>
-        // 1. SUAS CHAVES QUE VOCÊ GUARDOU:
+        // Configuração do seu Firebase
         const firebaseConfig = {
-          apiKey: "AIzaSyDBntAU1uA5zGGZRW3c0Olxn_fe7-D0EFM",
-          authDomain: "miguarani.firebaseapp.com",
-          projectId: "miguarani",
-          storageBucket: "miguarani.firebasestorage.app",
-          messagingSenderId: "526507667874",
-          appId: "1:526507667874:web:b5b08c890c832d5f2702fb",
-          measurementId: "G-3R3PNJ3GM4"
+            apiKey: "AIzaSyDBntAU1uA5zGGZRW3c0Olxn_fe7-D0EFM",
+            authDomain: "miguarani.firebaseapp.com",
+            projectId: "miguarani",
+            storageBucket: "miguarani.firebasestorage.app",
+            messagingSenderId: "526507667874",
+            appId: "1:526507667874:web:b5b08c890c832d5f2702fb",
+            measurementId: "G-3R3PNJ3GM4"
         };
         
         // Inicializa o Firebase
         firebase.initializeApp(firebaseConfig);
 
-        // 2. Configuração do link de retorno (Seu site na Vercel)
+        // Configurações do link de e-mail
         const actionCodeSettings = {
-          url: 'https://mi-venta-plus.vercel.app', 
+          url: 'https://mi-venta-plus.vercel.app', // Link de retorno após clicar no e-mail
           handleCodeInApp: true,
         };
 
-        // Splash Screen (Sumiço automático após 2.5 segundos)
+        // Efeito da Splash Screen
         setTimeout(() => {
-            document.getElementById('splash').style.opacity = '0';
-            setTimeout(() => { document.getElementById('splash').style.display = 'none'; }, 500);
+            const splash = document.getElementById('splash');
+            splash.style.opacity = '0';
+            setTimeout(() => { splash.style.display = 'none'; }, 500);
         }, 2500);
 
-        // 3. Função Real de Login (Envia o e-mail de verdade)
+        // Função para enviar o link real de login
         function enviarCodigo() {
             const email = document.getElementById('email').value;
-            if(!email) return alert("Por favor, digite seu e-mail");
+            
+            if(!email || !email.includes('@')) {
+                return alert("Por favor, introduce un email válido.");
+            }
 
+            // Inicia o processo de envio do link
             firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
                 .then(() => {
+                    // Salva o e-mail localmente para confirmar na volta
                     window.localStorage.setItem('emailForSignIn', email);
-                    alert('¡Enlace enviado! Revisa tu bandeja de entrada (e-mail).');
+                    alert('¡Enlace enviado! Revisa tu bandeja de entrada en unos instantes.');
                 })
                 .catch((error) => {
-                    alert('Erro ao enviar e-mail: ' + error.message);
+                    console.error("Error Firebase:", error);
+                    alert('Hubo un error: ' + error.message);
+                });
+        }
+
+        // Lógica para completar o login quando o usuário volta do e-mail
+        if (firebase.auth().isSignInWithEmailLink(window.location.href)) {
+            let email = window.localStorage.getItem('emailForSignIn');
+            if (!email) {
+                email = window.prompt('Por favor, confirma tu email para iniciar sesión:');
+            }
+            firebase.auth().signInWithEmailLink(email, window.location.href)
+                .then((result) => {
+                    window.localStorage.removeItem('emailForSignIn');
+                    alert('¡Bienvenido! Has iniciado sesión correctamente.');
+                    // Aqui você pode redirecionar para o Dashboard futuramente
+                })
+                .catch((error) => {
+                    alert('Error al completar el ingreso: ' + error.message);
                 });
         }
     </script>
